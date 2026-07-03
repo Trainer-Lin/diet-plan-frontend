@@ -1,10 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ClockCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Card, Col, Divider, Progress, Row, Space, Tag, Typography } from 'antd';
+import { Button, Card, Col, Divider, Progress, Row, Space, Tag, Typography, Modal,Form, Select, Input, InputNumber, message } from 'antd';
 import { useHealthStore } from '../store/useHealthStore';
+
 
 const Record: React.FC = () => {
   const mealRecords = useHealthStore((state) => state.mealRecords);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const showModal = () =>{
+    setIsModalVisible(true);
+  }
+  const closeModal = () =>{
+    setIsModalVisible(false);
+  }
+  const handleOk = async()=>{
+    // TODO: 补充OK逻辑
+    try{
+      const values = await form.validateFields();
+      const totalCalories = values.foods.reduce((sum: number, item: any) => sum + item.calories, 0);
+    }catch(error){
+      message.error('请填写完整信息');
+      return;
+    }
+    closeModal();
+  }
+
+  
+
+  const [form] = Form.useForm();
 
   return (
     <div>
@@ -30,10 +53,70 @@ const Record: React.FC = () => {
             </Typography.Paragraph>
             <Button type="primary" icon={<PlusOutlined />} style={{ background: '#0b7a29', borderColor: '#0b7a29' }}>
               添加一餐
+              
             </Button>
           </Card>
         </Col>
       </Row>
+
+      <Modal
+          title="添加饮食记录"
+          open = {isModalVisible}
+          onOk = {handleOk}
+          onCancel = {closeModal}
+          destroyOnHidden = {true}>
+        
+        表格内容: 餐次, 食物, 热量, 分量
+        <Form
+         form = {form}
+         layout = "vertical"
+         initialValues = {
+          {
+            meal: '早餐',
+            foods: [{}],
+          }
+         }
+        >
+         餐次
+        <Form.Item
+          name = "meal"
+          label = "餐次"
+          rules = {[{ required: true, message: '请选择餐次' }]}
+        >
+          <Select
+            options = {[
+              {label: '早餐', value: '早餐'},
+              {label: '午餐', value: '午餐'},
+              {label: '晚餐', value: '晚餐'},
+              {label: '加餐', value: '加餐'},
+            ]}
+          />
+        </Form.Item>
+
+        食物名称
+        <Form.Item
+          name = "foods"
+          label = "食物名称"
+          rules = {[{ required: true, message: '请输入食物名称' }]}>
+          <Input />        
+        </Form.Item>
+
+        热量
+        <Form.Item
+          name = "foods"
+          label = "热量"
+          rules = {[{ required: true, message: '请输入热量' }]}>
+          <InputNumber />        
+        </Form.Item>
+        分量
+        <Form.Item
+          name = "foods"
+          label = "分量"
+          rules = {[{ required: true, message: '请输入分量' }]}>
+          <Input />        
+        </Form.Item>
+        </Form>
+      </Modal>
 
       <Row gutter={[20, 20]}>
         {mealRecords.map((record) => (

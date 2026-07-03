@@ -20,6 +20,7 @@ const { Text, Title } = Typography;
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const token = useHealthStore((state) => state.token);
   const logout = useHealthStore((state) => state.logout);
 
   const menuItems = [
@@ -60,8 +61,13 @@ const MainLayout: React.FC = () => {
   };
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    if (token) {
+      logout();
+      navigate('/login');
+      return;
+    }
+
+    navigate('/');
   };
 
   const pageTitleMap: Record<string, string> = {
@@ -150,11 +156,11 @@ const MainLayout: React.FC = () => {
             <Text style={{ color: '#526157' }}>围绕饮食记录、目标追踪与趋势分析组织日常计划。</Text>
           </div>
           <Space size={12}>
-            <Tag color="green" style={{ borderRadius: 999, padding: '6px 12px' }}>
-              Zustand 架构
+            <Tag color={token ? 'green' : 'gold'} style={{ borderRadius: 999, padding: '6px 12px' }}>
+              {token ? '已登录' : '游客体验'}
             </Tag>
             <Button icon={<LogoutOutlined />} onClick={handleLogout}>
-              退出登录
+              {token ? '退出登录' : '返回首页'}
             </Button>
           </Space>
         </Header>

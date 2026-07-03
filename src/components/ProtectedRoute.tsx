@@ -1,13 +1,13 @@
 import React from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useHealthStore } from '../store/useHealthStore';
 
 const ProtectedRoute: React.FC = () => {
-  const location = useLocation();
   const token = useHealthStore((state) => state.token);
+  const allowGuestPreview = true;
 
-  if (!token) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+  if (!token && !allowGuestPreview) {
+    return null;
   }
 
   return <Outlet />;

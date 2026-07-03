@@ -3,6 +3,7 @@ import { Card, Form, Input, Button, Typography, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useHealthStore } from '../store/useHealthStore';
+import { loginAPI } from '../api/auth';
 
 const { Title } = Typography;
 
@@ -11,13 +12,16 @@ const Login: React.FC = () => {
   const location = useLocation();
   const login = useHealthStore((state) => state.login);
 
-  const onFinish = (values: { username: string; password: string }) => {
-    console.log('Received values of form: ', values);
-    login('mock_token_123');
-    message.success('登录成功');
-    const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/app/dashboard';
-    navigate(redirectTo);
+  const onFinish = async(values: { username: string; password: string }) => {
+    try{
+      const data = await loginAPI(values);
+      login(data.token);
+      message.success('登录成功');
+    }catch(error){
+      message.error('登录失败');
+    }
   };
+
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f0f2f5' }}>
