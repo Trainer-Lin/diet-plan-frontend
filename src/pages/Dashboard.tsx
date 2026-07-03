@@ -1,19 +1,103 @@
 import React from 'react';
 import { CalendarOutlined, FireOutlined, HeartOutlined, RiseOutlined } from '@ant-design/icons';
-import { Card, Col, Progress, Row, Space, Statistic, Tag, Typography } from 'antd';
+import { Card, Col, Progress, Row, Space, Statistic, Tag, Typography, message } from 'antd';
 import ReactECharts from 'echarts-for-react';
-import { useHealthStore } from '../store/useHealthStore';
+import { getProfileAPI } from '../api/profile';
+import { getCheckinStatsAPI, getTodayStatsAPI, getWeeklyCaloriesAPI } from '../api/stats';
+
+const defaultDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
 const Dashboard: React.FC = () => {
-  const dashboardMetrics = useHealthStore((state) => state.dashboardMetrics);
-  const macroItems = useHealthStore((state) => state.macroItems);
-  const weeklyCalories = useHealthStore((state) => state.weeklyCalories);
-  const healthyHabits = useHealthStore((state) => state.healthyHabits);
-  const checkinDays = useHealthStore((state) => state.checkinDays);
+  const [loading, setLoading] = React.useState(true);
+  const [todayStats, setTodayStats] = React.useState({ totalCalories: 0, protein: 0, carbs: 0, fat: 0 });
+  const [weeklyCaloriesData, setWeeklyCaloriesData] = React.useState<{ days: string[]; calories: number[] }>({
+    days: defaultDays,
+    calories: [0, 0, 0, 0, 0, 0, 0],
+  });
+  const [checkinStats, setCheckinStats] = React.useState<{ completedDays: number; totalDays: number; statuses: string[] }>({
+    completedDays: 0,
+    totalDays: 7,
+    statuses: [],
+  });
+  const [profile, setProfile] = React.useState<{ weight: number; targetCalories?: number; tdee?: number }>({
+    weight: 0,
+  });
 
-  const todayCalories = 1680;
-  const targetCalories = 1900;
+  const loadDashboardData = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const [today, weekly, checkin, profileData] = await Promise.all([
+        getTodayStatsAPI(),
+        getWeeklyCaloriesAPI(),
+        getCheckinStatsAPI(),
+        getProfileAPI(),
+      ]);
+      setTodayStats(today);
+      setWeeklyCaloriesData({
+        days: weekly.days?.length ? weekly.days : defaultDays,
+        calories: weekly.calories?.length ? weekly.calories : [0, 0, 0, 0, 0, 0, 0],
+      });
+      setCheckinStats(checkin);
+      setProfile({
+        weight: profileData.weight,
+        targetCalories: profileData.targetCalories,
+        tdee: profileData.tdee,
+      });
+    } catch (error) {
+      message.error('获取总览数据失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  const targetCalories = profile.targetCalories || profile.tdee || 0;
+  const todayCalories = todayStats.totalCalories;
   const percent = Math.round((todayCalories / targetCalories) * 100);
+  const healthyHabits = [
+    '保证三餐规律记录',
+    '优先高蛋白低糖加餐',
+    '晚餐后减少额外热量摄入',
+  ];
+
+  const dashboardMetrics = [
+    { label: '今日热量', value: `${todayCalories} kcal`, hint: '来自后端今日摄入统计' },
+    { label: '本周打卡', value: `${checkinStats.completedDays}/${checkinStats.totalDays}`, hint: '根据后端打卡率接口计算' },
+    { label: '当前体重', value: `${profile.weight || '--'} kg`, hint: '读取个人档案最新体重' },
+    { label: '目标热量', value: `${targetCalories || '--'} kcal`, hint: '读取用户档案目标热量' },
+  ];
+
+  const macroItems = [
+    {
+      label: '蛋白质',
+      value: todayStats.protein,
+      unit: 'g',
+      progress: Math.min(100, Math.round((todayStats.protein / 120) * 100)),
+      color: '#0f766e',
+    },
+    {
+      label: '碳水',
+      value: todayStats.carbs,
+      unit: 'g',
+      progress: Math.min(100, Math.round((todayStats.carbs / 300) * 100)),
+      color: '#2563eb',
+    },
+    {
+      label: '脂肪',
+      value: todayStats.fat,
+      unit: 'g',
+      progress: Math.min(100, Math.round((todayStats.fat / 80) * 100)),
+      color: '#f59e0b',
+    },
+  ];
+
+  const checkinDays = defaultDays.map((day, index) => ({
+    day,
+    status: checkinStats.statuses[index] || 'rest',
+  }));
 
   const option = {
     title: {
@@ -23,7 +107,7 @@ const Dashboard: React.FC = () => {
     tooltip: { trigger: 'axis' },
     xAxis: {
       type: 'category',
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      data: weeklyCaloriesData.days,
     },
     yAxis: {
       type: 'value',
@@ -31,7 +115,7 @@ const Dashboard: React.FC = () => {
     },
     series: [
       {
-        data: weeklyCalories,
+        data: weeklyCaloriesData.calories,
         type: 'line',
         smooth: true,
         itemStyle: { color: '#52c41a' },
@@ -54,7 +138,7 @@ const Dashboard: React.FC = () => {
       <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
         {dashboardMetrics.map((metric, index) => (
           <Col xs={24} md={12} xl={6} key={metric.label}>
-            <Card style={{ borderRadius: 24 }}>
+            <Card loading={loading} style={{ borderRadius: 24 }}>
               <Statistic
                 title={metric.label}
                 value={metric.value}
@@ -73,21 +157,21 @@ const Dashboard: React.FC = () => {
 
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} xl={10}>
-          <Card style={{ borderRadius: 28 }}>
+          <Card loading={loading} style={{ borderRadius: 28 }}>
             <Statistic
               title="今日摄入 (kcal)"
               value={todayCalories}
               prefix={<FireOutlined style={{ color: '#fa8c16' }} />}
-              suffix={`/ ${targetCalories}`}
+              suffix={targetCalories ? `/ ${targetCalories}` : undefined}
             />
-            <Progress percent={percent} status={percent > 100 ? 'exception' : 'active'} strokeColor="#52c41a" style={{ marginTop: 16 }} />
+            <Progress percent={Number.isFinite(percent) ? percent : 0} status={percent > 100 ? 'exception' : 'active'} strokeColor="#52c41a" style={{ marginTop: 16 }} />
             <Typography.Paragraph style={{ marginTop: 12, marginBottom: 0, color: '#6b7280' }}>
-              午后加餐建议控制在 150 kcal 以内，优先选择高蛋白酸奶或水果。
+              今日摄入和目标热量都来自后端接口，可直接用于联调验证。
             </Typography.Paragraph>
           </Card>
         </Col>
         <Col xs={24} xl={14}>
-          <Card style={{ borderRadius: 28 }}>
+          <Card loading={loading} style={{ borderRadius: 28 }}>
             <Row gutter={[16, 16]}>
               {macroItems.map((item) => (
                 <Col xs={24} md={8} key={item.label}>
@@ -102,13 +186,13 @@ const Dashboard: React.FC = () => {
 
       <Row gutter={[24, 24]}>
         <Col xs={24} xl={16}>
-          <Card style={{ borderRadius: 28 }}>
+          <Card loading={loading} style={{ borderRadius: 28 }}>
             <ReactECharts option={option} style={{ height: 400 }} />
           </Card>
         </Col>
         <Col xs={24} xl={8}>
           <Space direction="vertical" size={20} style={{ width: '100%' }}>
-            <Card style={{ borderRadius: 28 }}>
+            <Card loading={loading} style={{ borderRadius: 28 }}>
               <Typography.Title level={4}>本周习惯建议</Typography.Title>
               <Space direction="vertical" size={10}>
                 {healthyHabits.map((habit) => (
@@ -118,7 +202,7 @@ const Dashboard: React.FC = () => {
                 ))}
               </Space>
             </Card>
-            <Card style={{ borderRadius: 28 }}>
+            <Card loading={loading} style={{ borderRadius: 28 }}>
               <Typography.Title level={4}>打卡状态</Typography.Title>
               <Row gutter={[10, 10]}>
                 {checkinDays.map((item) => (

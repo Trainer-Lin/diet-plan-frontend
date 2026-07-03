@@ -2,16 +2,34 @@ import React from 'react';
 import { Card, Form, Input, Button, Typography, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
+import { registerAPI, RegisterParams } from '../api/auth';
 
 const { Title } = Typography;
 
+interface RegisterFormValues extends RegisterParams {
+  confirmPassword: string;
+}
+
 const Register: React.FC = () => {
   const navigate = useNavigate();
+  const [submitting, setSubmitting] = React.useState(false);
 
-  const onFinish = (values: any) => {
-    console.log('Received values of form: ', values);
-    message.success('注册成功，请登录');
-    navigate('/login');
+  const onFinish = async (values: RegisterFormValues) => {
+    try {
+      setSubmitting(true);
+      await registerAPI({
+        username: values.username,
+        email: values.email,
+        password: values.password,
+        nickname: values.nickname,
+      });
+      message.success('注册成功，请登录');
+      navigate('/login');
+    } catch (error) {
+      message.error('注册失败');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -31,6 +49,21 @@ const Register: React.FC = () => {
             rules={[{ required: true, message: '请输入用户名!' }]}
           >
             <Input prefix={<UserOutlined />} placeholder="用户名" />
+          </Form.Item>
+          <Form.Item
+            name="nickname"
+            rules={[{ required: true, message: '请输入昵称!' }]}
+          >
+            <Input prefix={<UserOutlined />} placeholder="昵称" />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: '请输入邮箱!' },
+              { type: 'email', message: '请输入正确的邮箱格式!' },
+            ]}
+          >
+            <Input placeholder="邮箱" />
           </Form.Item>
           <Form.Item
             name="password"
@@ -57,7 +90,12 @@ const Register: React.FC = () => {
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" style={{ width: '100%', background: '#52c41a', borderColor: '#52c41a' }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitting}
+              style={{ width: '100%', background: '#52c41a', borderColor: '#52c41a' }}
+            >
               注册
             </Button>
             <div style={{ marginTop: 16, textAlign: 'center' }}>

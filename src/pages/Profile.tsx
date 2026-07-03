@@ -1,32 +1,66 @@
 import React from 'react';
-import { Card, Form, InputNumber, Select, Button, message, Row, Col, Statistic } from 'antd';
-import { useHealthStore } from '../store/useHealthStore';
+import { Card, Form, InputNumber, Select, Button, message, Row, Col, Statistic, Spin } from 'antd';
+import { getProfileAPI, updateProfileAPI } from '../api/profile';
 import { ProfileFormValues } from '../types/health';
 
 const { Option } = Select;
 
 const Profile: React.FC = () => {
   const [form] = Form.useForm();
-  const profile = useHealthStore((state) => state.profile);
-  const tdee = useHealthStore((state) => state.tdee);
-  const updateProfile = useHealthStore((state) => state.updateProfile);
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [tdee, setTdee] = React.useState(0);
+  const [targetCalories, setTargetCalories] = React.useState<number | undefined>(undefined);
 
-  const onFinish = (values: ProfileFormValues) => {
-    updateProfile(values);
-    message.success('档案更新成功，已重新计算每日建议摄入量');
+  const loadProfile = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const profile = await getProfileAPI();
+      form.setFieldsValue({
+        gender: profile.gender,
+        age: profile.age,
+        height: profile.height,
+        weight: profile.weight,
+        activity: profile.activity,
+        targetWeight: profile.targetWeight ?? undefined,
+      });
+      setTdee(profile.tdee || 0);
+      setTargetCalories(profile.targetCalories);
+    } catch (error) {
+      message.error('获取档案失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [form]);
+
+  React.useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  const onFinish = async (values: ProfileFormValues) => {
+    try {
+      setSaving(true);
+      await updateProfileAPI(values);
+      message.success('档案更新成功');
+      await loadProfile();
+    } catch (error) {
+      message.error('档案更新失败');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div>
       <h2 style={{ marginBottom: 24 }}>个人档案与目标</h2>
-      <Row gutter={24}>
+      <Spin spinning={loading}>
+        <Row gutter={24}>
         <Col span={16}>
           <Card title="基础数据设置">
             <Form
               form={form}
               layout="vertical"
               onFinish={onFinish}
-              initialValues={profile}
             >
               <Row gutter={16}>
                 <Col span={12}>
@@ -63,9 +97,19 @@ const Profile: React.FC = () => {
                     </Select>
                   </Form.Item>
                 </Col>
+                <Col span={24}>
+                  <Form.Item name="targetWeight" label="目标体重 (kg)">
+                    <InputNumber style={{ width: '100%' }} min={20} max={200} />
+                  </Form.Item>
+                </Col>
               </Row>
               <Form.Item>
-                <Button type="primary" htmlType="submit" style={{ background: '#52c41a', borderColor: '#52c41a' }}>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={saving}
+                  style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                >
                   保存并计算
                 </Button>
               </Form.Item>
@@ -77,6 +121,7 @@ const Profile: React.FC = () => {
             {tdee > 0 ? (
               <div style={{ textAlign: 'center', paddingTop: 20 }}>
                 <Statistic title="每日建议摄入热量 (TDEE)" value={tdee} suffix="kcal" valueStyle={{ color: '#52c41a', fontSize: 36, fontWeight: 'bold' }} />
+                {targetCalories ? <Statistic title="系统推荐目标热量" value={targetCalories} suffix="kcal" style={{ marginTop: 24 }} /> : null}
                 <p style={{ marginTop: 16, color: '#8c8c8c' }}>保持当前体重所需的卡路里。</p>
                 <p style={{ color: '#8c8c8c' }}>如需减脂，建议在此基础上减少 300-500 kcal。</p>
               </div>
@@ -87,7 +132,8 @@ const Profile: React.FC = () => {
             )}
           </Card>
         </Col>
-      </Row>
+        </Row>
+      </Spin>
     </div>
   );
 };

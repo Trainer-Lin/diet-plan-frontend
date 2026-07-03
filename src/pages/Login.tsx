@@ -11,17 +11,22 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const login = useHealthStore((state) => state.login);
+  const [submitting, setSubmitting] = React.useState(false);
 
-  const onFinish = async(values: { username: string; password: string }) => {
-    try{
+  const onFinish = async (values: { username: string; password: string }) => {
+    try {
+      setSubmitting(true);
       const data = await loginAPI(values);
       login(data.token);
       message.success('登录成功');
-    }catch(error){
+      const redirectPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/app/dashboard';
+      navigate(redirectPath, { replace: true });
+    } catch (error) {
       message.error('登录失败');
+    } finally {
+      setSubmitting(false);
     }
   };
-
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f0f2f5' }}>
@@ -50,7 +55,12 @@ const Login: React.FC = () => {
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" style={{ width: '100%', background: '#52c41a', borderColor: '#52c41a' }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitting}
+              style={{ width: '100%', background: '#52c41a', borderColor: '#52c41a' }}
+            >
               登录
             </Button>
             <div style={{ marginTop: 16, textAlign: 'center' }}>

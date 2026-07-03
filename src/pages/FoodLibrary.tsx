@@ -1,17 +1,76 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Card, Input, Space, Table, Tag, Typography } from 'antd';
+import { Button, Card, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, Typography, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { FoodLibraryItem } from '../types/health';
-import { useHealthStore } from '../store/useHealthStore';
+import { createCustomFoodAPI, FoodResponse, getFoodsAPI, searchFoodsAPI } from '../api/foods';
+
+interface CustomFoodFormValues {
+  name: string;
+  category: string;
+  servingSize: number;
+  servingUnit: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+const formatServing = (food: FoodResponse) => {
+  if (food.serving) {
+    return food.serving;
+  }
+
+  if (food.servingSize !== undefined && food.servingUnit) {
+    return `${food.servingSize}${food.servingUnit}`;
+  }
+
+  return '--';
+};
+
+const mapFoodItem = (food: FoodResponse): FoodLibraryItem => ({
+  key: String(food.id),
+  name: food.name,
+  category: food.category,
+  serving: formatServing(food),
+  calories: food.calories,
+  protein: food.protein,
+  carbs: food.carbs,
+  fat: food.fat,
+  tags: food.tags || [],
+});
 
 const FoodLibrary: React.FC = () => {
   const [keyword, setKeyword] = useState('');
-  const foodLibraryItems = useHealthStore((state) => state.foodLibraryItems);
+  const [foodLibraryItems, setFoodLibraryItems] = useState<FoodLibraryItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [form] = Form.useForm<CustomFoodFormValues>();
+
+  const loadFoods = React.useCallback(async (searchKeyword?: string) => {
+    try {
+      setLoading(true);
+      const response = searchKeyword ? await searchFoodsAPI(searchKeyword) : await getFoodsAPI();
+      setFoodLibraryItems(response.map(mapFoodItem));
+    } catch (error) {
+      message.error('获取食物库失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      loadFoods(keyword.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [keyword, loadFoods]);
 
   const dataSource = useMemo(
-    () => foodLibraryItems.filter((item) => item.name.includes(keyword) || item.category.includes(keyword)),
-    [foodLibraryItems, keyword],
+    () => foodLibraryItems,
+    [foodLibraryItems],
   );
 
   const columns: ColumnsType<FoodLibraryItem> = [
@@ -71,6 +130,24 @@ const FoodLibrary: React.FC = () => {
     },
   ];
 
+  const handleCreate = async () => {
+    try {
+      const values = await form.validateFields();
+      setSubmitting(true);
+      await createCustomFoodAPI(values);
+      message.success('新增自定义食材成功');
+      setModalOpen(false);
+      form.resetFields();
+      await loadFoods(keyword.trim());
+    } catch (error) {
+      if (error instanceof Error) {
+        return;
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div>
       <Card style={{ borderRadius: 28, marginBottom: 20 }}>
@@ -92,7 +169,12 @@ const FoodLibrary: React.FC = () => {
               onChange={(event) => setKeyword(event.target.value)}
               style={{ width: 320 }}
             />
-            <Button type="primary" icon={<PlusOutlined />} style={{ background: '#0b7a29', borderColor: '#0b7a29' }}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setModalOpen(true)}
+              style={{ background: '#0b7a29', borderColor: '#0b7a29' }}
+            >
               新增自定义食材
             </Button>
           </Space>
@@ -101,6 +183,7 @@ const FoodLibrary: React.FC = () => {
 
       <Card style={{ borderRadius: 28 }}>
         <Table<FoodLibraryItem>
+          loading={loading}
           rowKey="key"
           columns={columns}
           dataSource={dataSource}
@@ -108,6 +191,51 @@ const FoodLibrary: React.FC = () => {
           scroll={{ x: 960 }}
         />
       </Card>
+
+      <Modal
+        title="新增自定义食材"
+        open={modalOpen}
+        confirmLoading={submitting}
+        onOk={handleCreate}
+        onCancel={() => {
+          setModalOpen(false);
+          form.resetFields();
+        }}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item name="name" label="食物名称" rules={[{ required: true, message: '请输入食物名称' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="category" label="分类" rules={[{ required: true, message: '请输入分类' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="servingSize" label="标准份量" rules={[{ required: true, message: '请输入标准份量' }]}>
+            <InputNumber style={{ width: '100%' }} min={1} />
+          </Form.Item>
+          <Form.Item name="servingUnit" label="单位" rules={[{ required: true, message: '请输入单位' }]}>
+            <Select
+              options={[
+                { label: '克', value: '克' },
+                { label: '毫升', value: '毫升' },
+                { label: '份', value: '份' },
+                { label: '个', value: '个' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item name="calories" label="热量(kcal)" rules={[{ required: true, message: '请输入热量' }]}>
+            <InputNumber style={{ width: '100%' }} min={0} />
+          </Form.Item>
+          <Form.Item name="protein" label="蛋白质(g)" rules={[{ required: true, message: '请输入蛋白质' }]}>
+            <InputNumber style={{ width: '100%' }} min={0} />
+          </Form.Item>
+          <Form.Item name="carbs" label="碳水(g)" rules={[{ required: true, message: '请输入碳水' }]}>
+            <InputNumber style={{ width: '100%' }} min={0} />
+          </Form.Item>
+          <Form.Item name="fat" label="脂肪(g)" rules={[{ required: true, message: '请输入脂肪' }]}>
+            <InputNumber style={{ width: '100%' }} min={0} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

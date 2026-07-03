@@ -62,4 +62,5 @@ export interface ProfileFormValues {
   height: number;
   weight: number;
   activity: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+  targetWeight?: number | null;
 }
