@@ -157,7 +157,7 @@ const FoodLibrary: React.FC = () => {
               食物库与营养信息
             </Typography.Title>
             <Typography.Text style={{ color: '#6b7280' }}>
-              为饮食记录提供查询支持，也方便后端队友准备基础食物表。
+              为您的饮食记录提供全面的热量与营养素查询支持，助您精准把控每一餐。
             </Typography.Text>
           </div>
           <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>

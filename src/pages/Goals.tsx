@@ -46,17 +46,17 @@ const Goals: React.FC = () => {
     {
       title: '当前体重',
       value: `${profile.weight || '--'} kg`,
-      description: '来自后端个人档案接口，作为当前管理基线。',
+      description: '基于您最新的个人档案，作为当前健康管理的基线。',
     },
     {
       title: '目标体重',
       value: profile.targetWeight ? `${profile.targetWeight} kg` : '--',
-      description: '来自档案中的目标体重字段，可用于跟踪减脂或增肌目标。',
+      description: '动态追踪您的减脂或增肌目标，随时调整计划。',
     },
     {
       title: '每日目标热量',
       value: targetCalories ? `${targetCalories} kcal` : '--',
-      description: '优先使用后端目标热量，没有则回退到 TDEE。',
+      description: '结合您的基础代谢与目标为您量身定制。',
     },
   ];
 
@@ -74,7 +74,7 @@ const Goals: React.FC = () => {
               </Typography.Title>
               <Typography.Title style={{ margin: 0, color: '#0b7a29' }}>{targetCalories || '--'} kcal / day</Typography.Title>
               <Typography.Paragraph style={{ marginBottom: 0, color: '#6b7280' }}>
-                基于 {profile.height} cm、{profile.weight} kg、{profile.activity} 活动强度估算，可作为后端接口的计算校验样例。
+                基于您的身高、体重与活动强度科学估算，为您提供每日摄入的基准参考。
               </Typography.Paragraph>
             </Space>
           </Card>
@@ -99,7 +99,7 @@ const Goals: React.FC = () => {
                 <Typography.Title level={4} style={{ margin: 0 }}>
                   本周完成度
                 </Typography.Title>
-                <Typography.Text style={{ color: '#6b7280' }}>来自打卡率统计接口</Typography.Text>
+                <Typography.Text style={{ color: '#6b7280' }}>您本周的饮食打卡进度</Typography.Text>
               </div>
             </Space>
             <Progress percent={completionRate} strokeColor="#16a34a" style={{ marginTop: 18 }} />

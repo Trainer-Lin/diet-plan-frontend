@@ -17,7 +17,7 @@ const featureCards = [
   },
   {
     title: '统计分析与体重趋势',
-    description: '查看近 7 天热量变化、月度完成率以及体重趋势，方便答辩展示。',
+    description: '查看近 7 天热量变化、月度完成率以及体重趋势，通过数据驱动健康决策。',
   },
 ];
 
@@ -25,7 +25,7 @@ const highlights = [
   '个人目标管理',
   '连续打卡激励',
   '热量与宏量营养素统计',
-  '适合课程设计展示',
+  '多维数据可视化',
 ];
 
 const Home: React.FC = () => {
@@ -117,7 +117,7 @@ const Home: React.FC = () => {
             </Title>
             <Paragraph style={{ fontSize: 20, lineHeight: 1.8, color: '#5d6f65', maxWidth: 620 }}>
               根据您的目标、生活方式和口味，构建可执行的饮食记录、热量统计、目标管理与趋势分析流程，
-              让课程设计既有真实业务价值，也有足够完整的前后端联动展示。
+              帮助您轻松建立健康的饮食习惯，见证每一次身体的积极蜕变。
             </Paragraph>
             <Space size={16} wrap>
               <Button
@@ -242,11 +242,11 @@ const Home: React.FC = () => {
               bodyStyle={{ padding: 34 }}
             >
               <Title level={2} style={{ marginTop: 0 }}>
-                项目适合这样落地
+                科学的健康管理闭环
               </Title>
               <Paragraph style={{ fontSize: 17, color: '#5a6c62', lineHeight: 1.9 }}>
-                以“饮食记录与打卡”为核心主线，把食物库、统计分析、体重趋势和目标管理串成完整闭环。
-                登录注册保持轻量，登录后全部进入统一的健康工作台，便于你和后端队友分工联调。
+                以“饮食记录与打卡”为核心主线，将食物营养库、多维统计分析、体重变化趋势和个人目标管理串联成一个完整的闭环。
+                为您提供一站式、个性化的数字健康工作台。
               </Paragraph>
               <Space wrap size={[10, 12]}>
                 {highlights.map((item) => (
@@ -275,10 +275,10 @@ const Home: React.FC = () => {
                     <ReadOutlined style={{ fontSize: 22, color: '#0f7a3d', marginTop: 4 }} />
                     <div>
                       <Title level={4} style={{ marginTop: 0 }}>
-                        答辩展示重点
+                        核心数据洞察
                       </Title>
                       <Paragraph style={{ color: '#617169', marginBottom: 0 }}>
-                        展示从个人档案计算 TDEE，到三餐记录、热量汇总、目标达成率和体重趋势的全流程，逻辑清晰、难度适中。
+                        涵盖个人 TDEE 计算、三餐明细记录、热量缺口追踪及目标达成率分析，全方位护航您的健康旅程。
                       </Paragraph>
                     </div>
                   </Space>

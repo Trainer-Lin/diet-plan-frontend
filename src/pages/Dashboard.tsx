@@ -64,10 +64,10 @@ const Dashboard: React.FC = () => {
   ];
 
   const dashboardMetrics = [
-    { label: '今日热量', value: `${todayCalories} kcal`, hint: '来自后端今日摄入统计' },
-    { label: '本周打卡', value: `${checkinStats.completedDays}/${checkinStats.totalDays}`, hint: '根据后端打卡率接口计算' },
-    { label: '当前体重', value: `${profile.weight || '--'} kg`, hint: '读取个人档案最新体重' },
-    { label: '目标热量', value: `${targetCalories || '--'} kcal`, hint: '读取用户档案目标热量' },
+    { label: '今日热量', value: `${todayCalories} kcal`, hint: '今日总摄入热量' },
+    { label: '本周打卡', value: `${checkinStats.completedDays}/${checkinStats.totalDays}`, hint: '本周连续记录天数' },
+    { label: '当前体重', value: `${profile.weight || '--'} kg`, hint: '您的最新体重记录' },
+    { label: '目标热量', value: `${targetCalories || '--'} kcal`, hint: '推荐每日摄入上限' },
   ];
 
   const macroItems = [
@@ -166,7 +166,7 @@ const Dashboard: React.FC = () => {
             />
             <Progress percent={Number.isFinite(percent) ? percent : 0} status={percent > 100 ? 'exception' : 'active'} strokeColor="#52c41a" style={{ marginTop: 16 }} />
             <Typography.Paragraph style={{ marginTop: 12, marginBottom: 0, color: '#6b7280' }}>
-              今日摄入和目标热量都来自后端接口，可直接用于联调验证。
+              目标热量基于您的个人档案精准计算，助您合理控制每日热量缺口。
             </Typography.Paragraph>
           </Card>
         </Col>
