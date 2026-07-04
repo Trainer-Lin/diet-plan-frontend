@@ -139,20 +139,6 @@ const Home: React.FC = () => {
                 查看食谱
               </Button>
             </Space>
-
-            <Space align="center" size={18} style={{ marginTop: 36 }}>
-              <Avatar.Group>
-                <Avatar src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=close-up%20portrait%20of%20healthy%20young%20asian%20woman%20smiling%2C%20clean%20studio%20lighting%2C%20natural%20skin%2C%20editorial%20fitness%20app%20avatar&image_size=square" />
-                <Avatar src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=portrait%20of%20young%20asian%20man%20in%20sportswear%2C%20clean%20wellness%20branding%2C%20soft%20light%2C%20mobile%20app%20avatar&image_size=square" />
-                <Avatar style={{ background: '#d1f7d8', color: '#0f7a3d' }}>5k+</Avatar>
-              </Avatar.Group>
-              <div>
-                <Text strong style={{ display: 'block', color: '#23352b' }}>
-                  快乐用户
-                </Text>
-                <Text style={{ color: '#5d6f65' }}>正在达成他们的营养目标</Text>
-              </div>
-            </Space>
           </Col>
           <Col xs={24} lg={12}>
             <div
@@ -232,14 +218,15 @@ const Home: React.FC = () => {
         </Row>
 
         <Row gutter={[24, 24]} style={{ marginTop: 48 }}>
-          <Col xs={24} lg={14}>
+          <Col xs={24}>
             <Card
               style={{
                 borderRadius: 34,
                 border: 'none',
                 background: 'linear-gradient(135deg, #f8fff8 0%, #ebf7ee 100%)',
+                height: '100%',
               }}
-              bodyStyle={{ padding: 34 }}
+              bodyStyle={{ padding: 34, height: '100%' }}
             >
               <Title level={2} style={{ marginTop: 0 }}>
                 科学的健康管理闭环
@@ -256,35 +243,6 @@ const Home: React.FC = () => {
                 ))}
               </Space>
             </Card>
-          </Col>
-          <Col xs={24} lg={10}>
-            <Row gutter={[16, 16]}>
-              <Col span={12}>
-                <Card style={{ borderRadius: 26, textAlign: 'center', minHeight: 180 }}>
-                  <Statistic title="页面模块" value={6} suffix="个" />
-                </Card>
-              </Col>
-              <Col span={12}>
-                <Card style={{ borderRadius: 26, textAlign: 'center', minHeight: 180 }}>
-                  <Statistic title="核心接口" value={12} suffix="+" />
-                </Card>
-              </Col>
-              <Col span={24}>
-                <Card style={{ borderRadius: 26, minHeight: 220 }}>
-                  <Space align="start">
-                    <ReadOutlined style={{ fontSize: 22, color: '#0f7a3d', marginTop: 4 }} />
-                    <div>
-                      <Title level={4} style={{ marginTop: 0 }}>
-                        核心数据洞察
-                      </Title>
-                      <Paragraph style={{ color: '#617169', marginBottom: 0 }}>
-                        涵盖个人 TDEE 计算、三餐明细记录、热量缺口追踪及目标达成率分析，全方位护航您的健康旅程。
-                      </Paragraph>
-                    </div>
-                  </Space>
-                </Card>
-              </Col>
-            </Row>
           </Col>
         </Row>
       </Content>
