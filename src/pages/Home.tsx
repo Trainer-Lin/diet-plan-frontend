@@ -105,9 +105,6 @@ const Home: React.FC = () => {
       <Content style={{ padding: '40px 40px 56px' }}>
         <Row gutter={[32, 32]} align="middle">
           <Col xs={24} lg={12}>
-            <Tag color="green" style={{ borderRadius: 999, padding: '8px 14px', marginBottom: 20 }}>
-              Zustand + React + TypeScript
-            </Tag>
             <Title style={{ fontSize: 58, lineHeight: 1.08, marginBottom: 20, color: '#0f1720' }}>
               您的健康，
               <br />
