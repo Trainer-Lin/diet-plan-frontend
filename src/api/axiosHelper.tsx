@@ -40,11 +40,13 @@ axiosHelper.interceptors.response.use(
       return Promise.reject(new Error(errorMessage));
     }
 
+    // 后端返回了错误状态码（如 400 校验失败, 500 内部错误）
     message.error(errorMessage);
     return Promise.reject(new Error(errorMessage));
   },
   (error) => {
-    const errorMessage = error.response?.data?.message || '网络异常或服务器错误';
+    // 处理 HTTP 状态码错误（如 404, 500）或网络断开
+    const errorMessage = error.response?.data?.message || error.response?.data?.msg || '网络异常或服务器错误';
     message.error(errorMessage);
     return Promise.reject(error);
   },

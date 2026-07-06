@@ -26,7 +26,8 @@ const Register: React.FC = () => {
       message.success('注册成功，请登录');
       navigate('/login');
     } catch (error) {
-      message.error('注册失败');
+      // 错误提示已由 axiosHelper 统一处理，这里不再重复弹窗
+      console.error('注册异常:', error);
     } finally {
       setSubmitting(false);
     }

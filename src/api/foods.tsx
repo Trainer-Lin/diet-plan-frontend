@@ -34,5 +34,5 @@ export const searchFoodsAPI = (keyword: string) => {
 };
 
 export const createCustomFoodAPI = (data: CustomFoodCreateParams) => {
-  return axiosHelper.post<any, void>('/api/foods/custom', data);
+  return axiosHelper.post<any, FoodResponse>('/api/foods/custom', data);
 };

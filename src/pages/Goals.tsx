@@ -2,7 +2,8 @@ import React from 'react';
 import { AimOutlined, TrophyOutlined } from '@ant-design/icons';
 import { Card, Col, Progress, Row, Space, Tag, Typography, message } from 'antd';
 import { getProfileAPI } from '../api/profile';
-import { getCheckinStatsAPI } from '../api/stats';
+import { getCheckinStatsAPI, getTodayStatsAPI } from '../api/stats';
+import { subscribeNutritionDataChanged } from '../utils/nutritionSync';
 
 const Goals: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
@@ -19,28 +20,35 @@ const Goals: React.FC = () => {
     activity: '',
   });
   const [checkin, setCheckin] = React.useState({ completedDays: 0, totalDays: 0 });
+  const [todayCalories, setTodayCalories] = React.useState(0);
 
-  React.useEffect(() => {
-    const loadGoalsData = async () => {
-      try {
-        setLoading(true);
-        const [profileData, checkinData] = await Promise.all([
-          getProfileAPI(),
-          getCheckinStatsAPI(),
-        ]);
-        setProfile(profileData);
-        setCheckin(checkinData);
-      } catch (error) {
-        message.error('获取目标数据失败');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadGoalsData();
+  const loadGoalsData = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const [profileData, checkinData, todayData] = await Promise.all([
+        getProfileAPI(),
+        getCheckinStatsAPI(),
+        getTodayStatsAPI(),
+      ]);
+      setProfile(profileData);
+      setCheckin(checkinData);
+      setTodayCalories(todayData.totalCalories || 0);
+    } catch (error) {
+      message.error('获取目标数据失败');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  React.useEffect(() => {
+    loadGoalsData();
+    const unsubscribe = subscribeNutritionDataChanged(loadGoalsData);
+
+    return unsubscribe;
+  }, [loadGoalsData]);
+
   const targetCalories = profile.targetCalories || profile.tdee || 0;
+  const remainingCalories = Math.max(0, targetCalories - todayCalories);
   const completionRate = checkin.totalDays ? Math.round((checkin.completedDays / checkin.totalDays) * 100) : 0;
   const goalCards = [
     {
@@ -58,6 +66,11 @@ const Goals: React.FC = () => {
       value: targetCalories ? `${targetCalories} kcal` : '--',
       description: '结合您的基础代谢与目标为您量身定制。',
     },
+    {
+      title: '今日已摄入',
+      value: `${todayCalories} kcal`,
+      description: '基于您已记录的饮食自动汇总，新增一餐后会同步更新。',
+    },
   ];
 
   return (
@@ -74,7 +87,7 @@ const Goals: React.FC = () => {
               </Typography.Title>
               <Typography.Title style={{ margin: 0, color: '#0b7a29' }}>{targetCalories || '--'} kcal / day</Typography.Title>
               <Typography.Paragraph style={{ marginBottom: 0, color: '#6b7280' }}>
-                基于您的身高、体重与活动强度科学估算，为您提供每日摄入的基准参考。
+                今日已摄入 {todayCalories} kcal，剩余可参考摄入 {remainingCalories} kcal。
               </Typography.Paragraph>
             </Space>
           </Card>
@@ -109,7 +122,7 @@ const Goals: React.FC = () => {
 
       <Row gutter={[20, 20]}>
         {goalCards.map((goal, index) => (
-          <Col xs={24} md={12} xl={8} key={goal.title}>
+          <Col xs={24} md={12} xl={6} key={goal.title}>
             <Card loading={loading} style={{ borderRadius: 28, height: '100%' }}>
               <Space direction="vertical" size={14}>
                 <div

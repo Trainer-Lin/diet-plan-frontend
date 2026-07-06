@@ -17,7 +17,7 @@ export interface DailyDietRecordResponse {
 }
 
 export interface DietRecordItemCreateParams {
-  foodId: number;
+  foodId?: number | null;
   name: string;
   amount: string;
   calories: number;

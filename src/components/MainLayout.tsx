@@ -16,6 +16,14 @@ import { useHealthStore } from '../store/useHealthStore';
 
 const { Header, Content, Sider } = Layout;
 const { Text, Title } = Typography;
+const sloganLines = ['🥪三餐烟火🥘', '🍻四季安康💞'];
+const sloganLineStyle: React.CSSProperties = {
+  color: '#f6fff8',
+  fontSize: 18,
+  fontWeight: 700,
+  lineHeight: 1.25,
+  letterSpacing: 1,
+};
 
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -115,10 +123,17 @@ const MainLayout: React.FC = () => {
               padding: '12px 14px',
               borderRadius: 18,
               background: 'rgba(255,255,255,0.14)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 4,
             }}
           >
-            <Text style={{ color: '#f6fff8' }}>本周执行完成度</Text>
-            <div style={{ marginTop: 6, fontSize: 26, fontWeight: 700 }}>84%</div>
+            {sloganLines.map((line) => (
+              <div key={line} style={sloganLineStyle}>
+                {line}
+              </div>
+            ))}
           </div>
         </div>
         <Menu

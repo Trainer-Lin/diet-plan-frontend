@@ -1,6 +1,6 @@
 import React from 'react';
-import { ArrowRightOutlined, CheckCircleFilled, LineChartOutlined, ReadOutlined } from '@ant-design/icons';
-import { Avatar, Button, Card, Col, Layout, Menu, Row, Space, Statistic, Tag, Typography } from 'antd';
+import { ArrowRightOutlined, CheckCircleFilled, LineChartOutlined } from '@ant-design/icons';
+import { Button, Card, Col, Layout, Menu, Row, Space, Tag, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
 
 const { Header, Content } = Layout;

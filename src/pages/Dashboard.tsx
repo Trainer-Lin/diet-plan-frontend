@@ -4,6 +4,7 @@ import { Card, Col, Progress, Row, Space, Statistic, Tag, Typography, message } 
 import ReactECharts from 'echarts-for-react';
 import { getProfileAPI } from '../api/profile';
 import { getCheckinStatsAPI, getTodayStatsAPI, getWeeklyCaloriesAPI } from '../api/stats';
+import { subscribeNutritionDataChanged } from '../utils/nutritionSync';
 
 const defaultDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
@@ -52,6 +53,9 @@ const Dashboard: React.FC = () => {
 
   React.useEffect(() => {
     loadDashboardData();
+    const unsubscribe = subscribeNutritionDataChanged(loadDashboardData);
+
+    return unsubscribe;
   }, [loadDashboardData]);
 
   const targetCalories = profile.targetCalories || profile.tdee || 0;
