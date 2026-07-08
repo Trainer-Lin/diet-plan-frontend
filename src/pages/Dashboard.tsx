@@ -2,6 +2,7 @@ import React from 'react';
 import { CalendarOutlined, FireOutlined, HeartOutlined, RiseOutlined } from '@ant-design/icons';
 import { Card, Col, Progress, Row, Space, Statistic, Tag, Typography, message } from 'antd';
 import ReactECharts from 'echarts-for-react';
+import { getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
 import { getProfileAPI } from '../api/profile';
 import { getCheckinStatsAPI, getTodayStatsAPI, getWeeklyCaloriesAPI } from '../api/stats';
 import { subscribeNutritionDataChanged } from '../utils/nutritionSync';
@@ -20,8 +21,20 @@ const Dashboard: React.FC = () => {
     totalDays: 7,
     statuses: [],
   });
-  const [profile, setProfile] = React.useState<{ weight: number; targetCalories?: number; tdee?: number }>({
+  const [profile, setProfile] = React.useState<{
+    weight: number;
+    targetWeight?: number | null;
+    targetCalories?: number;
+    tdee?: number;
+    height?: number;
+    age?: number;
+    gender?: string;
+  }>({
     weight: 0,
+  });
+  const [aiAdvice, setAiAdvice] = React.useState<AiAdviceResponse>({
+    brief: '加载中...',
+    detailed: '',
   });
 
   const loadDashboardData = React.useCallback(async () => {
@@ -41,9 +54,38 @@ const Dashboard: React.FC = () => {
       setCheckinStats(checkin);
       setProfile({
         weight: profileData.weight,
+        targetWeight: profileData.targetWeight,
         targetCalories: profileData.targetCalories,
         tdee: profileData.tdee,
+        height: profileData.height,
+        age: profileData.age,
+        gender: profileData.gender,
       });
+
+      // 根据当前数据请求 AI 健康建议
+      // 计算本周平均每日热量差
+      const calories = weekly.calories?.length ? weekly.calories : [];
+      const target = profileData.targetCalories || profileData.tdee || 0;
+      const averageDailyDiff = calories.length
+        ? Math.round(calories.reduce((sum: number, item: number) => sum + (item - target), 0) / calories.length)
+        : 0;
+
+      const advice = await getAiAdviceAPI({
+        weight: profileData.weight,
+        targetWeight: profileData.targetWeight,
+        targetCalories: target,
+        todayCalories: today.totalCalories,
+        todayProtein: today.protein,
+        todayCarbs: today.carbs,
+        todayFat: today.fat,
+        height: profileData.height,
+        age: profileData.age,
+        gender: profileData.gender,
+        averageDailyDiff,
+        completedDays: checkin.completedDays,
+        totalDays: checkin.totalDays,
+      });
+      setAiAdvice(advice);
     } catch (error) {
       message.error('获取总览数据失败');
     } finally {
@@ -61,11 +103,14 @@ const Dashboard: React.FC = () => {
   const targetCalories = profile.targetCalories || profile.tdee || 0;
   const todayCalories = todayStats.totalCalories;
   const percent = Math.round((todayCalories / targetCalories) * 100);
-  const healthyHabits = [
-    '保证三餐规律记录',
-    '优先高蛋白低糖加餐',
-    '晚餐后减少额外热量摄入',
-  ];
+  // 把 AI 返回的精简建议按逗号/顿号/分号拆分成多个标签展示
+  // 如果 AI 只返回一句话，则直接作为一个标签
+  const briefTags = React.useMemo(() => {
+    const brief = aiAdvice.brief || '保持规律饮食';
+    // 按常见分隔符拆分，过滤空字符串
+    const tags = brief.split(/[,，、;；]/).map((s) => s.trim()).filter(Boolean);
+    return tags.length ? tags : [brief];
+  }, [aiAdvice.brief]);
 
   const dashboardMetrics = [
     { label: '今日热量', value: `${todayCalories} kcal`, hint: '今日总摄入热量' },
@@ -199,8 +244,8 @@ const Dashboard: React.FC = () => {
             <Card loading={loading} style={{ borderRadius: 28 }}>
               <Typography.Title level={4}>本周习惯建议</Typography.Title>
               <Space direction="vertical" size={10}>
-                {healthyHabits.map((habit) => (
-                  <Tag key={habit} color="green" style={{ marginInlineEnd: 0, padding: '8px 12px', borderRadius: 999 }}>
+                {briefTags.map((habit, index) => (
+                  <Tag key={`${habit}-${index}`} color="green" style={{ marginInlineEnd: 0, padding: '8px 12px', borderRadius: 999 }}>
                     {habit}
                   </Tag>
                 ))}
