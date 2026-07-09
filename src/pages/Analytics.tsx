@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Col, Row, Statistic, Typography, message } from 'antd';
 import ReactECharts from 'echarts-for-react';
 import { BulbOutlined } from '@ant-design/icons';
-import { defaultAiAdvice, getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
+import { getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
 import { getProfileAPI } from '../api/profile';
 import { getCheckinStatsAPI, getWeeklyCaloriesAPI, getWeeklyMacrosAPI, getWeightTrendAPI } from '../api/stats';
 import { subscribeNutritionDataChanged } from '../utils/nutritionSync';
@@ -20,7 +20,8 @@ const Analytics: React.FC = () => {
   const [targetCalories, setTargetCalories] = React.useState(0);
   const [weightTrend, setWeightTrend] = React.useState<Array<{ day: string; value: number; goalReached?: boolean }>>([]);
   const [aiAdvice, setAiAdvice] = React.useState<AiAdviceResponse>({
-    ...defaultAiAdvice,
+    brief: '',
+    detailed: '正在生成详细分析与推荐...',
   });
 
   const loadAnalytics = React.useCallback(async () => {
@@ -41,7 +42,7 @@ const Analytics: React.FC = () => {
       const target = profileData.targetCalories || profileData.tdee || 0;
       setTargetCalories(target);
 
-      // AI 建议异步加载，避免外部 AI 服务异常拖垮统计页主数据渲染。
+      // AI 建议单独加载，使用真实返回的 detailed 内容展示详细分析。
       const calories = weeklyCalorieData.calories || [];
       const averageDailyDiff = calories.length
         ? Math.round(calories.reduce((sum, item) => sum + (item - target), 0) / calories.length)
@@ -68,6 +69,11 @@ const Analytics: React.FC = () => {
         totalDays: checkinData.totalDays,
       }).then((advice) => {
         setAiAdvice(advice);
+      }).catch(() => {
+        setAiAdvice({
+          brief: '',
+          detailed: '详细建议暂时获取失败，请稍后重试。',
+        });
       });
     } catch (error) {
       message.error('获取统计数据失败');

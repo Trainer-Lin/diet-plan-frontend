@@ -1,8 +1,8 @@
 import React from 'react';
 import { CalendarOutlined, FireOutlined, HeartOutlined, RiseOutlined } from '@ant-design/icons';
-import { Card, Col, Progress, Row, Space, Statistic, Tag, Typography, message } from 'antd';
+import { Card, Col, Progress, Row, Space, Statistic, Typography, message } from 'antd';
 import ReactECharts from 'echarts-for-react';
-import { defaultAiAdvice, getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
+import { getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
 import { getProfileAPI } from '../api/profile';
 import { getCheckinStatsAPI, getTodayStatsAPI, getWeeklyCaloriesAPI } from '../api/stats';
 import { subscribeNutritionDataChanged } from '../utils/nutritionSync';
@@ -33,7 +33,8 @@ const Dashboard: React.FC = () => {
     weight: 0,
   });
   const [aiAdvice, setAiAdvice] = React.useState<AiAdviceResponse>({
-    ...defaultAiAdvice,
+    brief: '正在生成今日建议...',
+    detailed: '',
   });
 
   const loadDashboardData = React.useCallback(async () => {
@@ -62,7 +63,7 @@ const Dashboard: React.FC = () => {
         gender: profileData.gender,
       });
 
-      // AI 建议异步加载，避免外部 AI 服务异常拖垮总览数据渲染。
+      // AI 建议单独加载，使用真实返回的 brief 内容展示一句话建议。
       const calories = weekly.calories?.length ? weekly.calories : [];
       const target = profileData.targetCalories || profileData.tdee || 0;
       const averageDailyDiff = calories.length
@@ -85,6 +86,11 @@ const Dashboard: React.FC = () => {
         totalDays: checkin.totalDays,
       }).then((advice) => {
         setAiAdvice(advice);
+      }).catch(() => {
+        setAiAdvice({
+          brief: '今日建议暂时获取失败',
+          detailed: '',
+        });
       });
     } catch (error) {
       message.error('获取总览数据失败');
@@ -103,14 +109,7 @@ const Dashboard: React.FC = () => {
   const targetCalories = profile.targetCalories || profile.tdee || 0;
   const todayCalories = todayStats.totalCalories;
   const percent = Math.round((todayCalories / targetCalories) * 100);
-  // 把 AI 返回的精简建议按逗号/顿号/分号拆分成多个标签展示
-  // 如果 AI 只返回一句话，则直接作为一个标签
-  const briefTags = React.useMemo(() => {
-    const brief = aiAdvice.brief || '保持规律饮食';
-    // 按常见分隔符拆分，过滤空字符串
-    const tags = brief.split(/[,，、;；]/).map((s) => s.trim()).filter(Boolean);
-    return tags.length ? tags : [brief];
-  }, [aiAdvice.brief]);
+  const briefAdvice = aiAdvice.brief || '保持规律饮食';
 
   const dashboardMetrics = [
     { label: '今日热量', value: `${todayCalories} kcal`, hint: '今日总摄入热量' },
@@ -243,13 +242,11 @@ const Dashboard: React.FC = () => {
           <Space direction="vertical" size={20} style={{ width: '100%' }}>
             <Card loading={loading} style={{ borderRadius: 28 }}>
               <Typography.Title level={4}>本周习惯建议</Typography.Title>
-              <Space direction="vertical" size={10}>
-                {briefTags.map((habit, index) => (
-                  <Tag key={`${habit}-${index}`} color="green" style={{ marginInlineEnd: 0, padding: '8px 12px', borderRadius: 999 }}>
-                    {habit}
-                  </Tag>
-                ))}
-              </Space>
+              <Typography.Paragraph
+                style={{ marginBottom: 0, fontSize: 16, lineHeight: 1.8, color: '#166534', fontWeight: 500 }}
+              >
+                {briefAdvice}
+              </Typography.Paragraph>
             </Card>
             <Card loading={loading} style={{ borderRadius: 28 }}>
               <Typography.Title level={4}>打卡状态</Typography.Title>
