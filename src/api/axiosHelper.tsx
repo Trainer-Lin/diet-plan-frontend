@@ -58,10 +58,19 @@ axiosHelper.interceptors.response.use(
     return Promise.reject(new Error(errorMessage));
   },
   (error) => {
-    // 处理 HTTP 状态码错误（如 404, 500）或网络断开
+    // 处理 HTTP 状态码错误（如 404, 500）、请求超时或网络断开
     const axiosError = error as AxiosError<ApiResponse<unknown>>;
     const skipErrorMessage = axiosError.config?.skipErrorMessage;
-    const errorMessage = error.response?.data?.message || error.response?.data?.msg || '网络异常或服务器错误';
+
+    let errorMessage: string;
+    if (axiosError.code === 'ECONNABORTED' || axiosError.message?.includes('timeout')) {
+      errorMessage = '请求超时，请稍后重试';
+    } else if (!error.response) {
+      errorMessage = '网络异常，请检查网络连接';
+    } else {
+      errorMessage = error.response.data?.message || error.response.data?.msg || '服务器错误，请稍后重试';
+    }
+
     if (!skipErrorMessage) {
       message.error(errorMessage);
     }

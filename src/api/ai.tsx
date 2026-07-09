@@ -36,5 +36,9 @@ export interface AiAdviceResponse {
  * @returns 包含精简和详细建议的对象
  */
 export const getAiAdviceAPI = (params: AiAdviceParams) => {
-  return axiosHelper.post<any, AiAdviceResponse>('/api/ai/advice', params);
+  // AI 接口响应较慢，单独设置 60 秒超时；页面自身会处理失败回退，避免全局提示
+  return axiosHelper.post<any, AiAdviceResponse>('/api/ai/advice', params, {
+    timeout: 60000,
+    skipErrorMessage: true,
+  });
 };
