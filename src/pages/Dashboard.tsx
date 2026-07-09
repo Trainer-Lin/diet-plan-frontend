@@ -2,7 +2,7 @@ import React from 'react';
 import { CalendarOutlined, FireOutlined, HeartOutlined, RiseOutlined } from '@ant-design/icons';
 import { Card, Col, Progress, Row, Space, Statistic, Tag, Typography, message } from 'antd';
 import ReactECharts from 'echarts-for-react';
-import { getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
+import { defaultAiAdvice, getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
 import { getProfileAPI } from '../api/profile';
 import { getCheckinStatsAPI, getTodayStatsAPI, getWeeklyCaloriesAPI } from '../api/stats';
 import { subscribeNutritionDataChanged } from '../utils/nutritionSync';
@@ -33,13 +33,13 @@ const Dashboard: React.FC = () => {
     weight: 0,
   });
   const [aiAdvice, setAiAdvice] = React.useState<AiAdviceResponse>({
-    brief: '加载中...',
-    detailed: '',
+    ...defaultAiAdvice,
   });
 
   const loadDashboardData = React.useCallback(async () => {
+    setLoading(true);
+
     try {
-      setLoading(true);
       const [today, weekly, checkin, profileData] = await Promise.all([
         getTodayStatsAPI(),
         getWeeklyCaloriesAPI(),
@@ -62,15 +62,14 @@ const Dashboard: React.FC = () => {
         gender: profileData.gender,
       });
 
-      // 根据当前数据请求 AI 健康建议
-      // 计算本周平均每日热量差
+      // AI 建议异步加载，避免外部 AI 服务异常拖垮总览数据渲染。
       const calories = weekly.calories?.length ? weekly.calories : [];
       const target = profileData.targetCalories || profileData.tdee || 0;
       const averageDailyDiff = calories.length
         ? Math.round(calories.reduce((sum: number, item: number) => sum + (item - target), 0) / calories.length)
         : 0;
 
-      const advice = await getAiAdviceAPI({
+      void getAiAdviceAPI({
         weight: profileData.weight,
         targetWeight: profileData.targetWeight,
         targetCalories: target,
@@ -84,8 +83,9 @@ const Dashboard: React.FC = () => {
         averageDailyDiff,
         completedDays: checkin.completedDays,
         totalDays: checkin.totalDays,
+      }).then((advice) => {
+        setAiAdvice(advice);
       });
-      setAiAdvice(advice);
     } catch (error) {
       message.error('获取总览数据失败');
     } finally {

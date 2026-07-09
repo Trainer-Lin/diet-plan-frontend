@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Col, Row, Statistic, Typography, message } from 'antd';
 import ReactECharts from 'echarts-for-react';
 import { BulbOutlined } from '@ant-design/icons';
-import { getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
+import { defaultAiAdvice, getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
 import { getProfileAPI } from '../api/profile';
 import { getCheckinStatsAPI, getWeeklyCaloriesAPI, getWeeklyMacrosAPI, getWeightTrendAPI } from '../api/stats';
 import { subscribeNutritionDataChanged } from '../utils/nutritionSync';
@@ -20,13 +20,13 @@ const Analytics: React.FC = () => {
   const [targetCalories, setTargetCalories] = React.useState(0);
   const [weightTrend, setWeightTrend] = React.useState<Array<{ day: string; value: number; goalReached?: boolean }>>([]);
   const [aiAdvice, setAiAdvice] = React.useState<AiAdviceResponse>({
-    brief: '',
-    detailed: '加载中...',
+    ...defaultAiAdvice,
   });
 
   const loadAnalytics = React.useCallback(async () => {
+    setLoading(true);
+
     try {
-      setLoading(true);
       const [macroData, weightData, checkinData, weeklyCalorieData, profileData] = await Promise.all([
         getWeeklyMacrosAPI(),
         getWeightTrendAPI(),
@@ -41,8 +41,7 @@ const Analytics: React.FC = () => {
       const target = profileData.targetCalories || profileData.tdee || 0;
       setTargetCalories(target);
 
-      // 请求 AI 健康建议
-      // 计算本周平均每日热量差
+      // AI 建议异步加载，避免外部 AI 服务异常拖垮统计页主数据渲染。
       const calories = weeklyCalorieData.calories || [];
       const averageDailyDiff = calories.length
         ? Math.round(calories.reduce((sum, item) => sum + (item - target), 0) / calories.length)
@@ -53,7 +52,7 @@ const Analytics: React.FC = () => {
       const todayCarbs = macroData.carbs.length ? macroData.carbs[macroData.carbs.length - 1] : 0;
       const todayFat = macroData.fat.length ? macroData.fat[macroData.fat.length - 1] : 0;
 
-      const advice = await getAiAdviceAPI({
+      void getAiAdviceAPI({
         weight: profileData.weight,
         targetWeight: profileData.targetWeight,
         targetCalories: target,
@@ -67,8 +66,9 @@ const Analytics: React.FC = () => {
         averageDailyDiff,
         completedDays: checkinData.completedDays,
         totalDays: checkinData.totalDays,
+      }).then((advice) => {
+        setAiAdvice(advice);
       });
-      setAiAdvice(advice);
     } catch (error) {
       message.error('获取统计数据失败');
     } finally {

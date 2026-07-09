@@ -30,11 +30,22 @@ export interface AiAdviceResponse {
   detailed: string; // 详细建议
 }
 
+export const defaultAiAdvice: AiAdviceResponse = {
+  brief: '保持规律饮食',
+  detailed: 'AI 建议暂时不可用，但您的热量、营养和打卡数据仍会正常展示。建议继续保持规律饮食，优先补足蛋白质摄入，并持续记录每日变化。',
+};
+
 /**
  * 调用 AI 健康建议接口
  * @param params 用户的健康指标
  * @returns 包含精简和详细建议的对象
  */
-export const getAiAdviceAPI = (params: AiAdviceParams) => {
-  return axiosHelper.post<any, AiAdviceResponse>('/api/ai/advice', params);
+export const getAiAdviceAPI = async (params: AiAdviceParams) => {
+  try {
+    return await axiosHelper.post<any, AiAdviceResponse>('/api/ai/advice', params, {
+      skipErrorMessage: true,
+    });
+  } catch (error) {
+    return defaultAiAdvice;
+  }
 };

@@ -1,5 +1,15 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { message } from 'antd';
+
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    skipErrorMessage?: boolean;
+  }
+
+  export interface InternalAxiosRequestConfig {
+    skipErrorMessage?: boolean;
+  }
+}
 
 interface ApiResponse<T> {
   code: number;
@@ -28,6 +38,7 @@ axiosHelper.interceptors.response.use(
   (response) => {
     const res = response.data as ApiResponse<any>;
     const errorMessage = res.message || res.msg || '请求失败';
+    const skipErrorMessage = response.config.skipErrorMessage;
 
     if (res.code === 200) {
       return res.data;
@@ -41,13 +52,19 @@ axiosHelper.interceptors.response.use(
     }
 
     // 后端返回了错误状态码（如 400 校验失败, 500 内部错误）
-    message.error(errorMessage);
+    if (!skipErrorMessage) {
+      message.error(errorMessage);
+    }
     return Promise.reject(new Error(errorMessage));
   },
   (error) => {
     // 处理 HTTP 状态码错误（如 404, 500）或网络断开
+    const axiosError = error as AxiosError<ApiResponse<unknown>>;
+    const skipErrorMessage = axiosError.config?.skipErrorMessage;
     const errorMessage = error.response?.data?.message || error.response?.data?.msg || '网络异常或服务器错误';
-    message.error(errorMessage);
+    if (!skipErrorMessage) {
+      message.error(errorMessage);
+    }
     return Promise.reject(error);
   },
 );
