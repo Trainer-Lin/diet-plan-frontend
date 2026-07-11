@@ -3,7 +3,7 @@ import { Card, Form, Input, Button, Typography, message, Modal } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useHealthStore } from '../store/useHealthStore';
-import { loginAPI } from '../api/auth';
+import { loginAPI, getCurrentUserAPI } from '../api/auth';
 import { getProfileAPI } from '../api/profile';
 
 const { Title } = Typography;
@@ -12,6 +12,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const login = useHealthStore((state) => state.login);
+  const setRole = useHealthStore((state) => state.setRole);
   const [submitting, setSubmitting] = React.useState(false);
 
   const onFinish = async (values: { username: string; password: string }) => {
@@ -19,7 +20,24 @@ const Login: React.FC = () => {
       setSubmitting(true);
       const data = await loginAPI(values);
       login(data.token);
+
+      // 获取当前用户信息（含角色）
+      let userRole: string | undefined;
+      try {
+        const user = await getCurrentUserAPI();
+        userRole = user.role;
+        setRole(user.role);
+      } catch {
+        // 获取用户信息失败不阻塞
+      }
+
       message.success('登录成功');
+
+      // 管理员直接跳转到管理后台
+      if (userRole === 'ADMIN') {
+        navigate('/admin', { replace: true });
+        return;
+      }
 
       const redirectPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/app/dashboard';
 

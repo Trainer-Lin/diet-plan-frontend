@@ -17,6 +17,7 @@ import { ProfileFormValues } from '../types/health';
 
 interface HealthStore {
   token: string | null;
+  role: string | null;
   profile: ProfileFormValues;
   tdee: number;
   dashboardMetrics: typeof dashboardMetrics;
@@ -30,12 +31,14 @@ interface HealthStore {
   checkinDays: typeof checkinDays;
   goalCards: typeof goalCards;
   healthyHabits: string[];
-  login: (token: string) => void;
+  login: (token: string, role?: string) => void;
   logout: () => void;
+  setRole: (role: string) => void;
   updateProfile: (values: ProfileFormValues) => void;
 }
 
 const storedToken = localStorage.getItem('token');
+const storedRole = localStorage.getItem('role');
 
 const defaultProfile: ProfileFormValues = {
   gender: 'male',
@@ -47,6 +50,7 @@ const defaultProfile: ProfileFormValues = {
 
 export const useHealthStore = create<HealthStore>((set) => ({
   token: storedToken,
+  role: storedRole,
   profile: defaultProfile,
   tdee: calculateTdee(defaultProfile),
   dashboardMetrics,
@@ -60,13 +64,21 @@ export const useHealthStore = create<HealthStore>((set) => ({
   checkinDays,
   goalCards,
   healthyHabits,
-  login: (token) => {
+  login: (token, role) => {
     localStorage.setItem('token', token);
-    set({ token });
+    if (role) {
+      localStorage.setItem('role', role);
+    }
+    set({ token, role: role || null });
   },
   logout: () => {
     localStorage.removeItem('token');
-    set({ token: null });
+    localStorage.removeItem('role');
+    set({ token: null, role: null });
+  },
+  setRole: (role) => {
+    localStorage.setItem('role', role);
+    set({ role });
   },
   updateProfile: (values) => {
     set({

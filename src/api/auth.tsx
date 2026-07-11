@@ -22,6 +22,7 @@ export interface CurrentUserResponse {
   username: string;
   email: string;
   nickname: string;
+  role: string;
 }
 
 export const registerAPI = (data: RegisterParams) => {
