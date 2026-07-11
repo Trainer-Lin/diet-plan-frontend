@@ -135,7 +135,7 @@ const FoodLibrary: React.FC = () => {
       const values = await form.validateFields();
       setSubmitting(true);
       await createCustomFoodAPI(values);
-      message.success('新增自定义食材成功');
+      message.success('新增成功，已提交管理员审核，通过后将发布到共享食物库');
       setModalOpen(false);
       form.resetFields();
       await loadFoods(keyword.trim());

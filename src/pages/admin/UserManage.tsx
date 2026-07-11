@@ -16,7 +16,7 @@ const UserManage: React.FC = () => {
     setLoading(true);
     try {
       const data = await adminListUsersAPI();
-      setUsers(data);
+      setUsers(data.filter((u) => u.role !== 'ADMIN'));
     } catch {
       message.error('加载用户列表失败');
     } finally {
@@ -87,20 +87,18 @@ const UserManage: React.FC = () => {
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑
           </Button>
-          {record.role !== 'ADMIN' && (
-            <Popconfirm
-              title="确认删除该用户？"
-              description="删除后不可恢复"
-              okText="删除"
-              cancelText="取消"
-              okButtonProps={{ danger: true }}
-              onConfirm={() => handleDelete(record)}
-            >
-              <Button type="link" danger icon={<DeleteOutlined />}>
-                删除
-              </Button>
-            </Popconfirm>
-          )}
+          <Popconfirm
+            title="确认删除该用户？"
+            description="删除后不可恢复"
+            okText="删除"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+            onConfirm={() => handleDelete(record)}
+          >
+            <Button type="link" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -141,7 +139,6 @@ const UserManage: React.FC = () => {
             <Select
               options={[
                 { value: 'USER', label: '普通用户' },
-                { value: 'ADMIN', label: '管理员' },
               ]}
             />
           </Form.Item>

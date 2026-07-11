@@ -24,7 +24,7 @@ const UserProfileManage: React.FC = () => {
   const loadUsers = async () => {
     try {
       const data = await adminListUsersAPI();
-      setUsers(data);
+      setUsers(data.filter((u) => u.role !== 'ADMIN'));
     } catch {
       message.error('加载用户列表失败');
     }
@@ -115,7 +115,6 @@ const UserProfileManage: React.FC = () => {
                       <div>{user.nickname}</div>
                       <div style={{ fontSize: 12, color: '#999' }}>@{user.username}</div>
                     </div>
-                    {user.role === 'ADMIN' && <Tag color="red">管理员</Tag>}
                   </Space>
                 </Button>
               ))}

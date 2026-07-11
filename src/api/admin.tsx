@@ -92,6 +92,44 @@ export const adminDeleteCustomFoodAPI = (id: number) => {
   return axiosHelper.delete<any, void>(`/api/admin/foods/${id}`);
 };
 
+// ===== 食材审核 =====
+export interface FoodReviewTicketItem {
+  id: number;
+  foodId: number;
+  name: string;
+  category: string;
+  serving: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  submitterId: number;
+  submitterUsername: string;
+  submitterNickname: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  reviewerId: number | null;
+  reviewerUsername: string | null;
+  remark: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+}
+
+export interface FoodReviewActionParams {
+  remark?: string;
+}
+
+export const adminListFoodReviewsAPI = () => {
+  return axiosHelper.get<any, FoodReviewTicketItem[]>('/api/admin/food-reviews');
+};
+
+export const adminApproveFoodReviewAPI = (id: number) => {
+  return axiosHelper.post<any, FoodReviewTicketItem>(`/api/admin/food-reviews/${id}/approve`);
+};
+
+export const adminRejectFoodReviewAPI = (id: number, data?: FoodReviewActionParams) => {
+  return axiosHelper.post<any, FoodReviewTicketItem>(`/api/admin/food-reviews/${id}/reject`, data || {});
+};
+
 // ===== 用户档案管理 =====
 export interface AdminUserProfileItem {
   userId: number;

@@ -11,6 +11,7 @@ import {
   AppstoreOutlined,
   UserOutlined,
   FileTextOutlined,
+  AuditOutlined,
 } from '@ant-design/icons';
 import { useHealthStore } from '../store/useHealthStore';
 
@@ -29,6 +30,7 @@ const AdminLayout: React.FC = () => {
     { key: '/admin/records', icon: <FileTextOutlined />, label: '用户记录查看' },
     { key: '/admin/foods', icon: <ThunderboltOutlined />, label: '食物库管理' },
     { key: '/admin/custom-foods', icon: <AppstoreOutlined />, label: '用户食物库管理' },
+    { key: '/admin/food-reviews', icon: <AuditOutlined />, label: '食材审核' },
   ];
 
   const handleMenuClick = ({ key }: { key: string }) => navigate(key);
@@ -45,6 +47,7 @@ const AdminLayout: React.FC = () => {
     '/admin/records': '用户记录查看',
     '/admin/foods': '食物库管理',
     '/admin/custom-foods': '用户食物库管理',
+    '/admin/food-reviews': '食材审核',
   };
 
   return (

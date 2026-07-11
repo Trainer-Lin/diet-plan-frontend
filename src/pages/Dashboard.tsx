@@ -16,10 +16,11 @@ const Dashboard: React.FC = () => {
     days: defaultDays,
     calories: [0, 0, 0, 0, 0, 0, 0],
   });
-  const [checkinStats, setCheckinStats] = React.useState<{ completedDays: number; totalDays: number; statuses: string[] }>({
+  const [checkinStats, setCheckinStats] = React.useState<{ completedDays: number; totalDays: number; statuses: string[]; days?: string[] }>({
     completedDays: 0,
     totalDays: 7,
     statuses: [],
+    days: [],
   });
   const [profile, setProfile] = React.useState<{
     weight: number;
@@ -142,7 +143,7 @@ const Dashboard: React.FC = () => {
     },
   ];
 
-  const checkinDays = defaultDays.map((day, index) => ({
+  const checkinDays = (checkinStats.days?.length ? checkinStats.days : defaultDays).map((day, index) => ({
     day,
     status: checkinStats.statuses[index] || 'rest',
   }));

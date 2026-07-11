@@ -19,6 +19,7 @@ import FoodManage from './pages/admin/FoodManage';
 import CustomFoodManage from './pages/admin/CustomFoodManage';
 import UserProfileManage from './pages/admin/UserProfileManage';
 import UserRecords from './pages/admin/UserRecords';
+import FoodReviewManage from './pages/admin/FoodReviewManage';
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
             <Route path="records" element={<UserRecords />} />
             <Route path="foods" element={<FoodManage />} />
             <Route path="custom-foods" element={<CustomFoodManage />} />
+            <Route path="food-reviews" element={<FoodReviewManage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
