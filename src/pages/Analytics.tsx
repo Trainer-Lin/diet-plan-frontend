@@ -1,10 +1,10 @@
 import React from 'react';
 import { Card, Col, Row, Statistic, Typography, message } from 'antd';
 import ReactECharts from 'echarts-for-react';
-import { BulbOutlined } from '@ant-design/icons';
+import { BulbOutlined, FireOutlined, CheckCircleOutlined, DashboardOutlined } from '@ant-design/icons';
 import { getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
-import { getProfileAPI } from '../api/profile';
-import { getCheckinStatsAPI, getWeeklyCaloriesAPI, getWeeklyMacrosAPI, getWeightTrendAPI } from '../api/stats';
+import { getProfileAPI, ProfileResponse } from '../api/profile';
+import { getCheckinStatsAPI, getWeeklyCaloriesAPI, getWeeklyMacrosAPI } from '../api/stats';
 import { subscribeNutritionDataChanged } from '../utils/nutritionSync';
 
 const Analytics: React.FC = () => {
@@ -18,7 +18,7 @@ const Analytics: React.FC = () => {
   const [weeklyCalories, setWeeklyCalories] = React.useState<number[]>([]);
   const [checkin, setCheckin] = React.useState({ completedDays: 0, totalDays: 0, statuses: [] as string[] });
   const [targetCalories, setTargetCalories] = React.useState(0);
-  const [weightTrend, setWeightTrend] = React.useState<Array<{ day: string; value: number; goalReached?: boolean }>>([]);
+  const [profile, setProfile] = React.useState<ProfileResponse | null>(null);
   const [aiAdvice, setAiAdvice] = React.useState<AiAdviceResponse>({
     brief: '',
     detailed: '正在生成详细分析与推荐...',
@@ -28,17 +28,16 @@ const Analytics: React.FC = () => {
     setLoading(true);
 
     try {
-      const [macroData, weightData, checkinData, weeklyCalorieData, profileData] = await Promise.all([
+      const [macroData, checkinData, weeklyCalorieData, profileData] = await Promise.all([
         getWeeklyMacrosAPI(),
-        getWeightTrendAPI(),
         getCheckinStatsAPI(),
         getWeeklyCaloriesAPI(),
         getProfileAPI(),
       ]);
       setWeeklyMacroTrend(macroData);
-      setWeightTrend(weightData);
       setCheckin(checkinData);
       setWeeklyCalories(weeklyCalorieData.calories || []);
+      setProfile(profileData);
       const target = profileData.targetCalories || profileData.tdee || 0;
       setTargetCalories(target);
 
@@ -92,7 +91,12 @@ const Analytics: React.FC = () => {
   const averageDailyDiff = weeklyCalories.length
     ? Math.round(weeklyCalories.reduce((sum, item) => sum + (item - targetCalories), 0) / weeklyCalories.length)
     : 0;
-  const goalReachedCount = weightTrend.filter((item) => item.goalReached).length;
+
+  const bmi = React.useMemo(() => {
+    if (!profile || !profile.weight || !profile.height) return 0;
+    const heightInMeters = profile.height / 100;
+    return Number((profile.weight / (heightInMeters * heightInMeters)).toFixed(1));
+  }, [profile]);
 
   const macroOption = {
     tooltip: { trigger: 'axis' },
@@ -106,59 +110,59 @@ const Analytics: React.FC = () => {
     ],
   };
 
-  const weightOption = {
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: weightTrend.map((item) => item.day) },
-    yAxis: { type: 'value', name: 'kg' },
-    series: [
-      {
-        type: 'line',
-        smooth: true,
-        data: weightTrend.map((item) => item.value),
-        color: '#16a34a',
-        areaStyle: {
-          color: 'rgba(22, 163, 74, 0.16)',
-        },
-      },
-    ],
-  };
-
   return (
     <div>
       <Row gutter={[20, 20]} style={{ marginBottom: 20 }}>
-        <Col xs={24} md={8}>
-          <Card loading={loading} style={{ borderRadius: 28 }}>
-            <Statistic title="本周打卡率" value={`${checkin.completedDays}/${checkin.totalDays}`} />
-          </Card>
-        </Col>
-        <Col xs={24} md={8}>
-          <Card loading={loading} style={{ borderRadius: 28 }}>
-            <Statistic title="平均每日热量差" value={averageDailyDiff} suffix="kcal" />
-          </Card>
-        </Col>
-        <Col xs={24} md={8}>
-          <Card loading={loading} style={{ borderRadius: 28 }}>
-            <Statistic title="体重达标点数" value={goalReachedCount} suffix="次" />
-          </Card>
-        </Col>
-      </Row>
-
-      <Row gutter={[20, 20]}>
-        <Col xs={24} xl={14}>
-          <Card loading={loading} style={{ borderRadius: 28 }}>
+        <Col xs={24} xl={16}>
+          <Card loading={loading} style={{ borderRadius: 28, height: '100%' }}>
             <Typography.Title level={4}>宏量营养素趋势</Typography.Title>
             <ReactECharts option={macroOption} style={{ height: 360 }} />
           </Card>
         </Col>
-        <Col xs={24} xl={10}>
-          <Card loading={loading} style={{ borderRadius: 28 }}>
-            <Typography.Title level={4}>体重变化趋势</Typography.Title>
-            <ReactECharts option={weightOption} style={{ height: 360 }} />
-          </Card>
+        <Col xs={24} xl={8}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, height: '100%' }}>
+            <Card
+              loading={loading}
+              style={{ flex: 1, borderRadius: 28, background: '#f6ffed', borderColor: '#b7eb8f' }}
+              bodyStyle={{ display: 'flex', alignItems: 'center', gap: 16 }}
+            >
+              <CheckCircleOutlined style={{ fontSize: 40, color: '#52c41a' }} />
+              <Statistic
+                title="本周打卡率"
+                value={`${checkin.completedDays}/${checkin.totalDays}`}
+                valueStyle={{ color: '#389e0d', fontWeight: 600 }}
+              />
+            </Card>
+            <Card
+              loading={loading}
+              style={{ flex: 1, borderRadius: 28, background: '#fff2e8', borderColor: '#ffbb96' }}
+              bodyStyle={{ display: 'flex', alignItems: 'center', gap: 16 }}
+            >
+              <FireOutlined style={{ fontSize: 40, color: '#fa8c16' }} />
+              <Statistic
+                title="平均每日热量差"
+                value={averageDailyDiff}
+                suffix="kcal"
+                valueStyle={{ color: '#d46b08', fontWeight: 600 }}
+              />
+            </Card>
+            <Card
+              loading={loading}
+              style={{ flex: 1, borderRadius: 28, background: '#e6f4ff', borderColor: '#91caff' }}
+              bodyStyle={{ display: 'flex', alignItems: 'center', gap: 16 }}
+            >
+              <DashboardOutlined style={{ fontSize: 40, color: '#1677ff' }} />
+              <Statistic
+                title="BMI 指数"
+                value={bmi}
+                valueStyle={{ color: '#0958d9', fontWeight: 600 }}
+              />
+            </Card>
+          </div>
         </Col>
       </Row>
 
-      {/* AI 健康建议板块，放在两个图表下方 */}
+      {/* AI 健康建议板块 */}
       <Row gutter={[20, 20]} style={{ marginTop: 20 }}>
         <Col xs={24}>
           <Card loading={loading} style={{ borderRadius: 28, background: '#f6ffed', borderColor: '#b7eb8f' }}>

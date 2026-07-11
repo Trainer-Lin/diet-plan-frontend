@@ -1,9 +1,10 @@
 import React from 'react';
-import { Card, Form, Input, Button, Typography, message } from 'antd';
+import { Card, Form, Input, Button, Typography, message, Modal } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useHealthStore } from '../store/useHealthStore';
 import { loginAPI } from '../api/auth';
+import { getProfileAPI } from '../api/profile';
 
 const { Title } = Typography;
 
@@ -19,7 +20,33 @@ const Login: React.FC = () => {
       const data = await loginAPI(values);
       login(data.token);
       message.success('登录成功');
+
       const redirectPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/app/dashboard';
+
+      try {
+        const profile = await getProfileAPI();
+        const isProfileIncomplete =
+          !profile.gender ||
+          !profile.age ||
+          !profile.height ||
+          !profile.weight ||
+          !profile.activity;
+
+        if (isProfileIncomplete) {
+          Modal.confirm({
+            title: '完善个人档案',
+            content: '您的身高、体重等身体数据尚未填写完整，为了获得更精准的饮食建议，请先完善个人档案。',
+            okText: '去填写',
+            cancelText: '稍后再说',
+            onOk: () => navigate('/app/profile', { replace: true }),
+            onCancel: () => navigate(redirectPath, { replace: true }),
+          });
+          return;
+        }
+      } catch {
+        // 档案获取失败时不阻塞跳转
+      }
+
       navigate(redirectPath, { replace: true });
     } catch (error) {
       message.error('登录失败');

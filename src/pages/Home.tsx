@@ -123,7 +123,7 @@ const Home: React.FC = () => {
                 shape="round"
                 icon={<ArrowRightOutlined />}
                 style={{ background: '#0b7a29', borderColor: '#0b7a29', paddingInline: 28, height: 54 }}
-                onClick={() => navigate('/app/dashboard')}
+                onClick={() => navigate('/login')}
               >
                 立即开始
               </Button>
