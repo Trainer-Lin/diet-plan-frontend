@@ -1,11 +1,14 @@
 import React from 'react';
-import { Card, Col, Row, Statistic, Typography, message } from 'antd';
+import { Card, Col, Row, Statistic, Typography, message, Button } from 'antd';
 import ReactECharts from 'echarts-for-react';
 import { BulbOutlined, FireOutlined, CheckCircleOutlined, DashboardOutlined } from '@ant-design/icons';
 import { getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
+import { getAiCache, setAiCache, removeAiCache } from '../utils/aiCache';
 import { getProfileAPI, ProfileResponse } from '../api/profile';
 import { getCheckinStatsAPI, getWeeklyCaloriesAPI, getWeeklyMacrosAPI } from '../api/stats';
 import { subscribeNutritionDataChanged } from '../utils/nutritionSync';
+
+const AI_ADVICE_CACHE_KEY = 'analytics_advice';
 
 const Analytics: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
@@ -19,7 +22,8 @@ const Analytics: React.FC = () => {
   const [checkin, setCheckin] = React.useState({ completedDays: 0, totalDays: 0, statuses: [] as string[] });
   const [targetCalories, setTargetCalories] = React.useState(0);
   const [profile, setProfile] = React.useState<ProfileResponse | null>(null);
-  const [aiAdvice, setAiAdvice] = React.useState<AiAdviceResponse>({
+  const cachedAdvice = getAiCache<AiAdviceResponse>(AI_ADVICE_CACHE_KEY);
+  const [aiAdvice, setAiAdvice] = React.useState<AiAdviceResponse>(cachedAdvice || {
     brief: '',
     detailed: '正在生成详细分析与推荐...',
   });
@@ -41,18 +45,35 @@ const Analytics: React.FC = () => {
       const target = profileData.targetCalories || profileData.tdee || 0;
       setTargetCalories(target);
 
-      // AI 建议单独加载，使用真实返回的 detailed 内容展示详细分析。
+      // AI 建议不再自动刷新，仅从缓存读取，用户点击"重新生成"才调接口
+    } catch (error) {
+      message.error('获取统计数据失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleRegenerateAdvice = async () => {
+    removeAiCache(AI_ADVICE_CACHE_KEY);
+    setAiAdvice({ brief: '', detailed: '正在生成详细分析与推荐...' });
+    try {
+      const [macroData, checkinData, weeklyCalorieData, profileData] = await Promise.all([
+        getWeeklyMacrosAPI(),
+        getCheckinStatsAPI(),
+        getWeeklyCaloriesAPI(),
+        getProfileAPI(),
+      ]);
+      const target = profileData.targetCalories || profileData.tdee || 0;
       const calories = weeklyCalorieData.calories || [];
       const averageDailyDiff = calories.length
         ? Math.round(calories.reduce((sum, item) => sum + (item - target), 0) / calories.length)
         : 0;
-
       const todayCalories = calories.length ? calories[calories.length - 1] : 0;
       const todayProtein = macroData.protein.length ? macroData.protein[macroData.protein.length - 1] : 0;
       const todayCarbs = macroData.carbs.length ? macroData.carbs[macroData.carbs.length - 1] : 0;
       const todayFat = macroData.fat.length ? macroData.fat[macroData.fat.length - 1] : 0;
 
-      void getAiAdviceAPI({
+      const advice = await getAiAdviceAPI({
         weight: profileData.weight,
         targetWeight: profileData.targetWeight,
         targetCalories: target,
@@ -66,20 +87,13 @@ const Analytics: React.FC = () => {
         averageDailyDiff,
         completedDays: checkinData.completedDays,
         totalDays: checkinData.totalDays,
-      }).then((advice) => {
-        setAiAdvice(advice);
-      }).catch(() => {
-        setAiAdvice({
-          brief: '',
-          detailed: '详细建议暂时获取失败，请稍后重试。',
-        });
       });
-    } catch (error) {
-      message.error('获取统计数据失败');
-    } finally {
-      setLoading(false);
+      setAiAdvice(advice);
+      setAiCache(AI_ADVICE_CACHE_KEY, advice);
+    } catch {
+      message.error('生成建议失败，请稍后重试');
     }
-  }, []);
+  };
 
   React.useEffect(() => {
     loadAnalytics();
@@ -166,10 +180,13 @@ const Analytics: React.FC = () => {
       <Row gutter={[20, 20]} style={{ marginTop: 20 }}>
         <Col xs={24}>
           <Card loading={loading} style={{ borderRadius: 28, background: '#f6ffed', borderColor: '#b7eb8f' }}>
-            <Typography.Title level={4} style={{ marginBottom: 16 }}>
-              <BulbOutlined style={{ color: '#52c41a', marginRight: 8 }} />
-              AI 健康建议
-            </Typography.Title>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Typography.Title level={4} style={{ margin: 0 }}>
+                <BulbOutlined style={{ color: '#52c41a', marginRight: 8 }} />
+                AI 健康建议
+              </Typography.Title>
+              <Button size="small" onClick={handleRegenerateAdvice}>重新生成</Button>
+            </div>
             <Typography.Paragraph style={{ fontSize: 16, lineHeight: 1.8, color: '#1f2937', whiteSpace: 'pre-wrap' }}>
               {aiAdvice.detailed || '暂无建议，请继续记录饮食数据。'}
             </Typography.Paragraph>

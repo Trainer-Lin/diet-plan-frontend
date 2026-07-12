@@ -31,13 +31,101 @@ export interface AiAdviceResponse {
 }
 
 /**
- * 调用 AI 健康建议接口
- * @param params 用户的健康指标
- * @returns 包含精简和详细建议的对象
- */
+   * 调用 AI 健康建议接口
+   * @param params 用户的健康指标
+   * @returns 包含精简和详细建议的对象
+   */
 export const getAiAdviceAPI = (params: AiAdviceParams) => {
   // AI 接口响应较慢，单独设置 60 秒超时；页面自身会处理失败回退，避免全局提示
   return axiosHelper.post<any, AiAdviceResponse>('/api/ai/advice', params, {
+    timeout: 60000,
+    skipErrorMessage: true,
+  });
+};
+
+/**
+ * AI 周计划请求参数
+ */
+export interface WeeklyPlanParams {
+  weight?: number;
+  targetWeight?: number | null;
+  targetCalories?: number;
+  height?: number;
+  age?: number;
+  gender?: string;
+  activityLevel?: string;
+  tdee?: number;
+}
+
+/**
+ * AI 周计划响应
+ */
+export interface WeeklyPlanResponse {
+  summary: string;
+  days: DayPlan[];
+}
+
+export interface DayPlan {
+  dayOfWeek: string;
+  date: string;
+  dietPlan: {
+    totalCalories: number;
+    breakfast: MealItem;
+    lunch: MealItem;
+    dinner: MealItem;
+    snacks: MealItem[];
+  };
+  fitnessPlan: {
+    estimatedCaloriesBurned: number;
+    warmUp: string;
+    mainWorkout: string;
+    coolDown: string;
+    notes: string;
+  };
+}
+
+export interface MealItem {
+  name: string;
+  description: string;
+  calories: number;
+}
+
+/**
+ * 调用 AI 周计划生成接口
+ */
+export const getWeeklyPlanAPI = (params: WeeklyPlanParams) => {
+  return axiosHelper.post<any, WeeklyPlanResponse>('/api/ai/weekly-plan', params, {
+    timeout: 120000,
+    skipErrorMessage: true,
+  });
+};
+
+/**
+ * AI 食物营养查询请求
+ */
+export interface FoodNutritionParams {
+  foodName: string;
+}
+
+/**
+ * AI 食物营养查询响应
+ */
+export interface FoodNutritionResponse {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  servingSize: number;
+  servingUnit: string;
+  note: string;
+}
+
+/**
+ * 调用 AI 食物营养查询接口
+ */
+export const getFoodNutritionAPI = (params: FoodNutritionParams) => {
+  return axiosHelper.post<any, FoodNutritionResponse>('/api/ai/food-nutrition', params, {
     timeout: 60000,
     skipErrorMessage: true,
   });

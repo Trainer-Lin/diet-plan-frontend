@@ -3,6 +3,7 @@ import { ClockCircleOutlined, DeleteOutlined, MinusCircleOutlined, PlusOutlined 
 import { Button, Card, Col, Divider, Empty, Form, Input, InputNumber, Modal, Progress, Row, Select, Space, Tag, Typography, message } from 'antd';
 import { createRecordAPI, deleteRecordItemAPI, DailyDietRecordResponse, getDailyRecordsAPI } from '../api/records';
 import { createCustomFoodAPI, FoodResponse, getFoodsAPI } from '../api/foods';
+import AiNutritionAssistant from '../components/AiNutritionAssistant';
 import { notifyNutritionDataChanged } from '../utils/nutritionSync';
 
 interface RecordFormValues {
@@ -327,6 +328,19 @@ const Record: React.FC = () => {
                                 >
                                   <Input placeholder="例如：自制三明治" />
                                 </Form.Item>
+                                <div style={{ marginBottom: 12 }}>
+                                  <AiNutritionAssistant
+                                    onFill={(data) => {
+                                      form.setFields([
+                                        { name: ['foods', field.name, 'name'], value: data.name },
+                                        { name: ['foods', field.name, 'calories'], value: data.calories },
+                                        { name: ['foods', field.name, 'protein'], value: data.protein },
+                                        { name: ['foods', field.name, 'carbs'], value: data.carbs },
+                                        { name: ['foods', field.name, 'fat'], value: data.fat },
+                                      ]);
+                                    }}
+                                  />
+                                </div>
                                 <Form.Item
                                   {...field}
                                   name={[field.name, 'calories']}

@@ -1,13 +1,15 @@
 import React from 'react';
 import { CalendarOutlined, FireOutlined, HeartOutlined, RiseOutlined } from '@ant-design/icons';
-import { Card, Col, Progress, Row, Space, Statistic, Typography, message } from 'antd';
+import { Card, Col, Progress, Row, Space, Statistic, Typography, message, Button } from 'antd';
 import ReactECharts from 'echarts-for-react';
 import { getAiAdviceAPI, AiAdviceResponse } from '../api/ai';
+import { getAiCache, setAiCache, removeAiCache } from '../utils/aiCache';
 import { getProfileAPI } from '../api/profile';
 import { getCheckinStatsAPI, getTodayStatsAPI, getWeeklyCaloriesAPI } from '../api/stats';
 import { subscribeNutritionDataChanged } from '../utils/nutritionSync';
 
 const defaultDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+const AI_ADVICE_CACHE_KEY = 'dashboard_advice';
 
 const Dashboard: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
@@ -33,7 +35,8 @@ const Dashboard: React.FC = () => {
   }>({
     weight: 0,
   });
-  const [aiAdvice, setAiAdvice] = React.useState<AiAdviceResponse>({
+  const cachedAdvice = getAiCache<AiAdviceResponse>(AI_ADVICE_CACHE_KEY);
+  const [aiAdvice, setAiAdvice] = React.useState<AiAdviceResponse>(cachedAdvice || {
     brief: '正在生成今日建议...',
     detailed: '',
   });
@@ -64,14 +67,28 @@ const Dashboard: React.FC = () => {
         gender: profileData.gender,
       });
 
-      // AI 建议单独加载，使用真实返回的 brief 内容展示一句话建议。
-      const calories = weekly.calories?.length ? weekly.calories : [];
+      // AI 建议不再自动刷新，仅从缓存读取，用户点击"重新生成"才调接口
+    } catch (error) {
+      message.error('获取总览数据失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleRegenerateAdvice = async () => {
+    removeAiCache(AI_ADVICE_CACHE_KEY);
+    setAiAdvice({ brief: '正在生成建议...', detailed: '' });
+    try {
+      const profileData = await getProfileAPI();
+      const weekly = await getWeeklyCaloriesAPI();
+      const today = await getTodayStatsAPI();
       const target = profileData.targetCalories || profileData.tdee || 0;
+      const calories = weekly.calories?.length ? weekly.calories : [];
       const averageDailyDiff = calories.length
         ? Math.round(calories.reduce((sum: number, item: number) => sum + (item - target), 0) / calories.length)
         : 0;
 
-      void getAiAdviceAPI({
+      const advice = await getAiAdviceAPI({
         weight: profileData.weight,
         targetWeight: profileData.targetWeight,
         targetCalories: target,
@@ -83,22 +100,15 @@ const Dashboard: React.FC = () => {
         age: profileData.age,
         gender: profileData.gender,
         averageDailyDiff,
-        completedDays: checkin.completedDays,
-        totalDays: checkin.totalDays,
-      }).then((advice) => {
-        setAiAdvice(advice);
-      }).catch(() => {
-        setAiAdvice({
-          brief: '今日建议暂时获取失败',
-          detailed: '',
-        });
+        completedDays: 0,
+        totalDays: 7,
       });
-    } catch (error) {
-      message.error('获取总览数据失败');
-    } finally {
-      setLoading(false);
+      setAiAdvice(advice);
+      setAiCache(AI_ADVICE_CACHE_KEY, advice);
+    } catch {
+      message.error('生成建议失败，请稍后重试');
     }
-  }, []);
+  };
 
   React.useEffect(() => {
     loadDashboardData();
@@ -242,7 +252,10 @@ const Dashboard: React.FC = () => {
         <Col xs={24} xl={8}>
           <Space direction="vertical" size={20} style={{ width: '100%' }}>
             <Card loading={loading} style={{ borderRadius: 28 }}>
-              <Typography.Title level={4}>本周习惯建议</Typography.Title>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Typography.Title level={4} style={{ margin: 0 }}>本周习惯建议</Typography.Title>
+                <Button size="small" onClick={handleRegenerateAdvice}>重新生成</Button>
+              </div>
               <Typography.Paragraph
                 style={{ marginBottom: 0, fontSize: 16, lineHeight: 1.8, color: '#166534', fontWeight: 500 }}
               >

@@ -10,6 +10,7 @@ import {
   LogoutOutlined,
   RadarChartOutlined,
   ReadOutlined,
+  ThunderboltOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { useHealthStore } from '../store/useHealthStore';
@@ -62,6 +63,11 @@ const MainLayout: React.FC = () => {
       icon: <UserOutlined />,
       label: '个人档案',
     },
+    {
+      key: '/app/weekly-plan',
+      icon: <ThunderboltOutlined />,
+      label: 'AI 周计划',
+    },
   ];
 
   const handleMenuClick = ({ key }: { key: string }) => {
@@ -85,6 +91,7 @@ const MainLayout: React.FC = () => {
     '/app/analytics': '统计分析',
     '/app/goals': '目标管理',
     '/app/profile': '个人档案',
+    '/app/weekly-plan': 'AI 一周计划',
   };
 
   return (

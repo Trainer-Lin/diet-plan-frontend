@@ -13,6 +13,7 @@ import Analytics from './pages/Analytics';
 import Goals from './pages/Goals';
 import Record from './pages/Record';
 import Profile from './pages/Profile';
+import WeeklyPlan from './pages/WeeklyPlan';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManage from './pages/admin/UserManage';
 import FoodManage from './pages/admin/FoodManage';
@@ -37,6 +38,7 @@ function App() {
             <Route path="analytics" element={<Analytics />} />
             <Route path="goals" element={<Goals />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="weekly-plan" element={<WeeklyPlan />} />
           </Route>
         </Route>
         <Route element={<AdminRoute />}>

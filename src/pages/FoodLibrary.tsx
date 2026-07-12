@@ -4,6 +4,7 @@ import { Button, Card, Form, Input, InputNumber, Modal, Select, Space, Table, Ta
 import type { ColumnsType } from 'antd/es/table';
 import { FoodLibraryItem } from '../types/health';
 import { createCustomFoodAPI, FoodResponse, getFoodsAPI, searchFoodsAPI } from '../api/foods';
+import AiNutritionAssistant from '../components/AiNutritionAssistant';
 
 interface CustomFoodFormValues {
   name: string;
@@ -222,6 +223,21 @@ const FoodLibrary: React.FC = () => {
               ]}
             />
           </Form.Item>
+          <div style={{ marginBottom: 16 }}>
+            <AiNutritionAssistant
+              onFill={(data) => {
+                form.setFieldsValue({
+                  name: data.name,
+                  calories: data.calories,
+                  protein: data.protein,
+                  carbs: data.carbs,
+                  fat: data.fat,
+                  servingSize: data.servingSize || 100,
+                  servingUnit: data.servingUnit || '克',
+                });
+              }}
+            />
+          </div>
           <Form.Item name="calories" label="热量(kcal)" rules={[{ required: true, message: '请输入热量' }]}>
             <InputNumber style={{ width: '100%' }} min={0} />
           </Form.Item>
